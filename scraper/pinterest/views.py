@@ -41,7 +41,10 @@ def scrap(request):
             count = 0
             for row in source('div', {'class' : 'pinMeta '}):
                 temp = {}
-                temp['description'] = row.find('p').text
+                try:
+                    temp['description'] = row.find('p').text
+                except AttributeError:
+                    temp['description'] = "No description"
                 try:
                     temp['repincount'] = source('em', {'class' : 'socialMetaCount repinCountSmall'})[count].text
                 except:

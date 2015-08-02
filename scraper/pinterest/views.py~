@@ -41,7 +41,10 @@ def scrap(request):
             count = 0
             for row in source('div', {'class' : 'pinMeta '}):
                 temp = {}
-                temp['description'] = row.find('p').text
+                try:
+                    temp['description'] = row.find('p').text
+                except NoneType:
+                    temp['description'] = "No description"
                 try:
                     temp['repincount'] = source('em', {'class' : 'socialMetaCount repinCountSmall'})[count].text
                 except:
@@ -69,7 +72,7 @@ def scrap(request):
     
     data = {
         'form' : form,
-        'board_list' : content_list,        
+        'board_detail' : content_list,        
         }
     template = "home.html"
     return render_to_response( template, data, 
