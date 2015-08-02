@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+<!--        {% block line %}
+              <hr>
+        {% endblock %}-->
+
+
+
+        {% block search %}
+            <form method="post" action="{% url scrap %}">{% csrf_token %}
+                <p>
+                    {{ form.as_p }}
+                    <input class="btn commit create" type="submit" value="Submit" />
+                </p>
+            </form>
+        {% endblock %}
+
+
+
+
+{% block content %}
+    {% if board_detail %}
+        
+        <div class="row-fluid marketing">
+            <div class="container-narrow">
+                <table class="table table-striped">
+                        <tr>
+                            <th>Description</th>
+                            <th>Comment</th>
+                            <th>Like</th>
+                            <th>Repin</th>
+                            <th>Pinned From</th>
+                        </tr>
+                      {% for dic in board_detail %}
+                        <tr>
+                            <td> {{ dic.description }} </td>
+                            <td> {{ dic.pincomment }} </td>
+                            <td> {{ dic.pinlink }} </td>
+                            <td> {{ dic.repincount }} </td>
+                            <td> {{ dic.pinnedfrom }} </td>
+                        </tr>
+                        {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% elif board_list %}
+        <div class="row-fluid marketing">
+            <div class="container-narrow">
+                <table class="table table-striped">
+                        <tr>
+                            <th>Title</th>
+                            <th>Pin</th>
+                        </tr>
+                      {% for dic in board_list %}
+                        <tr>
+                            <td> {{ dic.title_list }} </td>
+                            <td> {{ dic.pin_list }} </td>
+                        </tr>
+                        {% endfor %}
+                </table>
+            </div>
+        </div>   
+    {% endif %}
+{% endblock %}

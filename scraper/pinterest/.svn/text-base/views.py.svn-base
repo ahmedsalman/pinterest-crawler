@@ -1,0 +1,110 @@
+import re
+
+from django.http import HttpResponseRedirect, Http404
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response
+from django.template import RequestContext, loader
+
+import urllib2
+from urllib2 import Request, urlopen, URLError, HTTPError
+from BeautifulSoup import BeautifulSoup, NavigableString
+
+from scraper.pinterest.forms import URLForm
+
+#VIDEO_URL_PATTERN = re.compile(r'^([-a-z0-9A-Z_]+)://www.youtube.com/watch\?v=([-a-z0-9A-Z_]+)')
+invalid_tags = ['b', 'i', 'u']
+
+def scrap(request):
+
+    pin_list = []
+    title_list = []
+    
+    desciption_list = []
+
+    like_list = []
+    like = ""
+    
+    comment_list = []
+    comment = ""
+    
+    repin_list = []
+    repin = ""
+    form = URLForm() # An unbound form
+
+    if request.method == 'POST': # If the form has been submitted...
+        form = URLForm(request.POST) # A form bound to the POST data
+        if form.is_valid(): # All validation rules pass
+            url = form.cleaned_data['url']
+            req = Request(url)
+            try:
+                response = urlopen(req)
+            except HTTPError, e:
+                template = "404.html"
+                return render_to_response( template, context_instance = RequestContext( request ) )
+            except URLError, e:
+                template = "500.html"
+                return render_to_response( template, context_instance = RequestContext( request ) )
+            else:
+                source = BeautifulSoup(urllib2.urlopen(url).read())
+
+
+                #extracting title
+                for row in source('h3', {'class' : 'serif'}):
+                    title_list.append( row.find('h3', text=True) )
+
+                #extracting pin
+                for row in source('div', {'class' : 'pin pinBoard'}):
+                    temp = row.find('h4')
+                    pin_list.append( temp.contents[0].strip().split('s')[0]+'s' )
+
+      
+                
+                
+                #extracting description
+                for row in source('p', {'class' : 'description'}):
+                    desciption_list.append( row.find('p', text=True) )
+                    #desciption_list.append( row.string )
+
+                for row in source('p', {'class' : 'stats colorless'}):
+                    #extracting number of likes
+                    if len( row.findAll('span')[0].string ) == 1:
+                        like = "0 like"
+                        like_list.append( like )
+                    else:
+                        like = row.findAll('span')[0].string
+                        like_list.append( like.strip() )
+
+                    #extracting number of comments
+                    if len( row.findAll('span')[1].string ) == 1:
+                        comment = "0 comment"
+                        comment_list.append( comment )
+                    else:
+                        comment = row.findAll('span')[1].string
+                        comment_list.append( comment.strip() )
+
+                    #extracting number of repins
+                    try:
+                        if len( row.findAll('span')[2].string ) == 1:
+                            repin = "0 repin"
+                            repin_list.append( repin )
+                    except IndexError:
+                            repin = "0 repin"
+                            repin_list.append( repin )
+                    else:
+                        repin = row.findAll('span')[2].string
+                        repin_list.append( repin.strip() )
+    
+    board_list = [{"pin_list": d, "title_list": l} for d, l in zip(pin_list, title_list)]  
+    board_detail = [{"desciption_list": d, "like_list": l, "comment_list": c, "repin_list": r} for d, l, c, r in zip(desciption_list, like_list, comment_list, repin_list)]       
+
+
+    
+    data = {
+        'form' : form,
+        'board_detail' : board_detail,
+        'board_list' : board_list,        
+        }
+    template = "home.html"
+    return render_to_response( template, data, 
+                               context_instance = RequestContext( request ) )
